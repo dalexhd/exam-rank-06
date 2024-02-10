@@ -24,36 +24,43 @@ typedef struct {
 } Server;
 
 /**
- * Extracts a single message from a buffer, splitting at the first newline character.
- * The extracted message is removed from the original buffer.
+ * Extracts a single message from a buffer, terminating at the first newline character.
+ * The extracted message includes the newline character and is terminated with a null character.
+ * After extraction, the original buffer is modified to contain the remaining part after the extracted message.
  *
- * @param buf Pointer to a buffer containing messages.
- * @param msg Pointer to store the extracted message.
- * @return 1 if a message is extracted, 0 if no newline character is found, -1 if memory allocation fails.
+ * @param buf A pointer to a pointer to a buffer. This buffer contains the messages, and it will be modified
+ *            to point to the remaining part of the buffer after the extracted message.
+ * @param msg A pointer to a pointer where the extracted message will be stored. This pointer will point to
+ *            the beginning of the original buffer, and the buffer will be modified so that the extracted
+ *            message is null-terminated after the newline character.
+ * @return Returns 1 if a message is successfully extracted, 0 if no newline character is found in the buffer,
+ *         and -1 if memory allocation for the new buffer (for remaining messages) fails.
  */
-int extract_message(char **buf, char **msg) {
-    char *end = strstr(*buf, "\n");
-    if (!end) return 0;
+int extract_message(char **buf, char **msg)
+{
+	char	*newbuf;
+	int	i;
 
-    int len = end - *buf;
-    *msg = (char *)calloc(len + 1, sizeof(char));
-    if (!*msg) return -1;
-
-    strncpy(*msg, *buf, len);
-    (*msg)[len] = '\0';
-
-    int remaining = strlen(*buf) - len - 1;
-    char *newbuf = (char *)calloc(remaining + 1, sizeof(char));
-    if (!newbuf) {
-        free(*msg);
-        return -1;
-    }
-
-    strcpy(newbuf, end + 1);
-    free(*buf);
-    *buf = newbuf;
-
-    return 1;
+	*msg = 0;
+	if (*buf == 0)
+		return (0);
+	i = 0;
+	while ((*buf)[i])
+	{
+		if ((*buf)[i] == '\n')
+		{
+			newbuf = calloc(1, sizeof(*newbuf) * (strlen(*buf + i + 1) + 1));
+			if (newbuf == 0)
+				return (-1);
+			strcpy(newbuf, *buf + i + 1);
+			*msg = *buf;
+			(*msg)[i + 1] = 0;
+			*buf = newbuf;
+			return (1);
+		}
+		i++;
+	}
+	return (0);
 }
 
 /**
@@ -147,7 +154,7 @@ void rm_client(Server *server, int fd) {
 void send_msg(Server *server, int fd) {
     char *msg;
     while (extract_message(&server->clients[fd].msg_buffer, &msg) > 0) {
-        sprintf(server->buf_write, "client %d: %s\n", server->clients[fd].id, msg);
+        sprintf(server->buf_write, "client %d: %s", server->clients[fd].id, msg); //TODO: \n at end?
         broadcast(server, fd, server->buf_write);
         free(msg);
     }
@@ -171,8 +178,7 @@ void err(const char *str) {
 int create_socket() {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
-        err("Socket creation failed\n");
-
+        err("socket creation failed...\n");
     return sockfd;
 }
 
