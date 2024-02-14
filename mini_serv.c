@@ -1,14 +1,18 @@
-#include <unistd.h>
+#include <errno.h>
 #include <string.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+// Extra headers
 #include <stdlib.h>
 #include <stdio.h>
-#include <netinet/ip.h>
-#include <errno.h>
 #include <sys/select.h>
 
-#define MAX_CLIENTS 65536
-#define MAX_MSG_SIZE 1000000
-#define MAX_BUF_SIZE 1000000
+const int MAX_CLIENTS = 65536;
+const int MAX_MSG_SIZE = 1000000;
+const int MAX_BUF_SIZE = 1000000;
 
 typedef struct {
     int id;
@@ -228,7 +232,7 @@ int main(int argc, char **argv) {
     struct sockaddr_in servaddr;
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // Listen on all interfaces
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Listen on all interfaces
     servaddr.sin_port = htons(atoi(argv[1])); // Convert port number from string to integer
 
     // Bind the server socket to the IP address and port
