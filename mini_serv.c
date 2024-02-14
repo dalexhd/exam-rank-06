@@ -41,7 +41,7 @@ typedef struct {
  * @return Returns 1 if a message is successfully extracted, 0 if no newline character is found in the buffer,
  *         and -1 if memory allocation for the new buffer (for remaining messages) fails.
  */
-int extract_message(char **buf, char **msg)  // Provided in the exam.
+int extract_message(char **buf, char **msg)
 {
 	char	*newbuf;
 	int	i;
@@ -77,7 +77,7 @@ int extract_message(char **buf, char **msg)  // Provided in the exam.
  * @return Pointer to the newly allocated buffer containing the concatenated result,
  *         or NULL if memory allocation fails. If 'buf' was non-NULL, it is freed.
  */
-char *str_join(char *buf, char *add) // Provided in the exam.
+char *str_join(char *buf, char *add)
 {
 	char	*newbuf;
 	int		len;
