@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <errno.h>
+#include <sys/select.h>
 
 #define MAX_CLIENTS 65536
 #define MAX_MSG_SIZE 1000000
@@ -36,7 +37,7 @@ typedef struct {
  * @return Returns 1 if a message is successfully extracted, 0 if no newline character is found in the buffer,
  *         and -1 if memory allocation for the new buffer (for remaining messages) fails.
  */
-int extract_message(char **buf, char **msg)
+int extract_message(char **buf, char **msg)  // Provided in the exam.
 {
 	char	*newbuf;
 	int	i;
@@ -64,29 +65,32 @@ int extract_message(char **buf, char **msg)
 }
 
 /**
- * Appends a string to a dynamically allocated buffer. The buffer is resized as needed.
+ * Appends a string to an existing dynamically allocated buffer, reallocating and updating the buffer as necessary.
+ * The original buffer is freed and replaced with the new buffer containing the concatenated result.
  *
- * @param buf Pointer to the pointer of the buffer, which may be reallocated.
- * @param add String to be appended.
- * @return Pointer to the modified buffer or NULL if memory allocation fails.
+ * @param buf The original buffer. It can be NULL, in which case the function behaves like strdup for 'add'.
+ * @param add The string to be appended to 'buf'. It should not be NULL.
+ * @return Pointer to the newly allocated buffer containing the concatenated result,
+ *         or NULL if memory allocation fails. If 'buf' was non-NULL, it is freed.
  */
-char *str_join(char **buf, const char *add) {
-    if (!add) return *buf;
+char *str_join(char *buf, char *add) // Provided in the exam.
+{
+	char	*newbuf;
+	int		len;
 
-    int len_buf = *buf ? strlen(*buf) : 0;
-    int len_add = strlen(add);
-
-    char *newbuf = (char *)realloc(*buf, len_buf + len_add + 1);
-    if (!newbuf) return NULL;
-
-    if (*buf) {
-        strcat(newbuf, add);
-    } else {
-        strcpy(newbuf, add);
-    }
-
-    *buf = newbuf;
-    return newbuf;
+	if (buf == 0)
+		len = 0;
+	else
+		len = strlen(buf);
+	newbuf = malloc(sizeof(*newbuf) * (len + strlen(add) + 1));
+	if (newbuf == 0)
+		return (0);
+	newbuf[0] = 0;
+	if (buf != 0)
+		strcat(newbuf, buf);
+	free(buf);
+	strcat(newbuf, add);
+	return (newbuf);
 }
 
 /**
@@ -263,7 +267,10 @@ int main(int argc, char **argv) {
                 } else {
                     // Process received message
                     server.buf_read[res] = '\0';
-                    str_join(&server.clients[fd].msg_buffer, server.buf_read);
+                    char *new_msg_buffer = str_join(server.clients[fd].msg_buffer, server.buf_read);
+                    if (new_msg_buffer) {
+                        server.clients[fd].msg_buffer = new_msg_buffer;
+                    }
                     send_msg(&server, fd);
                 }
             }
